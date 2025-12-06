@@ -27,12 +27,29 @@ EDHauler is a plugin for Elite Dangerous Market Connector (EDMC) that displays F
 
 1. Open EDMC and go to **File → Settings**
 2. Navigate to the **EDHauler** tab
-3. Enter your **Fleet Carrier Name or Callsign**:
-   - Example: "Q0G-09K" or "HMS Endeavour"
+3. Enter your **Fleet Carrier Name, Callsign, or INARA Station ID**:
+   - **Name/Callsign**: "CREA" or "Q0G-09K" or "HMS Endeavour"
+   - **Station ID**: "1063226" (faster, more reliable)
    - The carrier must be registered on INARA
 4. Click **OK** to save
 
 That's it! No API key needed.
+
+### Finding Your Station ID
+
+For the most reliable results, use your carrier's INARA Station ID:
+
+1. Go to [INARA](https://inara.cz/)
+2. Search for your carrier name or callsign
+3. Open your carrier's page
+4. Look at the URL: `https://inara.cz/elite/station-market/1063226/`
+5. The number (`1063226`) is your Station ID
+6. Enter this number in the EDHauler configuration
+
+**Benefits of using Station ID:**
+- ✅ **Faster** - Skips the search step
+- ✅ **More reliable** - Direct access to your exact carrier
+- ✅ **No ambiguity** - Works even if multiple carriers have similar names
 
 ## Usage
 
@@ -132,6 +149,7 @@ The plugin fetches data from INARA's publicly available Fleet Carrier pages. It:
 
 ### "Carrier not found on INARA"
 - Check that you entered the correct carrier name or callsign
+- **Try using the INARA Station ID instead** (see Configuration section above)
 - Make sure the carrier is registered on INARA (visit https://inara.cz/)
 - Carriers must have their data synced to INARA (happens automatically when playing)
 
@@ -195,6 +213,15 @@ MIT License - See [LICENSE](LICENSE) file for details.
 This plugin is provided as-is for use with Elite Dangerous Market Connector.
 
 ## Changelog
+
+### Version 1.2.0 (2025-12-05)
+- **🆔 NEW: Station ID Support** - Use INARA Station ID for direct access
+  - Enter station ID (e.g., "1063226") instead of carrier name
+  - Faster and more reliable than name search
+  - Perfect for carriers with complex names or when search returns wrong results
+  - Automatically extracts carrier name and callsign from market page
+- **🐛 Bug Fix** - Resolved issues with carriers that have special characters or long names
+- **📝 Updated Documentation** - Added guide for finding Station ID
 
 ### Version 1.1.0 (2025-12-05)
 - **✨ NEW: In-Game Overlay** - Display market data directly in Elite Dangerous

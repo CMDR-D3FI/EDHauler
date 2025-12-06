@@ -76,6 +76,7 @@ class EDHauler(object):
         
         # UI widgets
         self.carrier_label = None
+        self.debug_label = None
         self.status_label = None
         self.market_frame = None
         self.refresh_button = None
@@ -230,7 +231,7 @@ class EDHauler(object):
     def fetch_market_data(self):
         """Fetch market data from INARA public page"""
         if not self.carrier_name:
-            return {"error": "Carrier Name is required"}
+            return {"error": "Carrier Name/ID is required"}
         
         if self.is_fetching:
             return {"error": "Already fetching data"}
@@ -238,41 +239,89 @@ class EDHauler(object):
         self.is_fetching = True
         
         try:
-            # Step 1: Search for the carrier to get its station ID
-            search_url = f"{INARA_BASE_URL}/elite/station/?search={quote(self.carrier_name)}"
+            carrier_info = {"name": "", "callsign": ""}
             
-            request = Request(
-                search_url,
-                headers={'User-Agent': 'EDHauler/1.0 (EDMC Plugin)'}
-            )
-            
-            response = urlopen(request, timeout=15)
-            html_content = response.read().decode('utf-8')
-            
-            # Extract station ID from the market link
-            market_link_match = re.search(r'/elite/station-market/(\d+)/', html_content)
-            if not market_link_match:
-                self.is_fetching = False
-                return {"error": "Carrier found but no market link available. Market may be disabled."}
-            
-            station_id = market_link_match.group(1)
-            
-            # Extract carrier info
-            carrier_info = {"name": self.carrier_name, "callsign": ""}
-            callsign_match = re.search(r'([A-Z0-9]{3}-[A-Z0-9]{3})', html_content)
-            if callsign_match:
-                carrier_info["callsign"] = callsign_match.group(1)
-            
-            # Step 2: Fetch the actual market page
-            market_url = f"{INARA_BASE_URL}/elite/station-market/{station_id}/"
-            
-            request = Request(
-                market_url,
-                headers={'User-Agent': 'EDHauler/1.0 (EDMC Plugin)'}
-            )
-            
-            response = urlopen(request, timeout=15)
-            market_html = response.read().decode('utf-8')
+            # Check if input is a station ID (all digits)
+            if self.carrier_name.strip().isdigit():
+                # Direct access using station ID
+                station_id = self.carrier_name.strip()
+                
+                # Fetch the market page directly
+                market_url = f"{INARA_BASE_URL}/elite/station-market/{station_id}/"
+                
+                request = Request(
+                    market_url,
+                    headers={'User-Agent': 'EDHauler/1.0 (EDMC Plugin)'}
+                )
+                
+                response = urlopen(request, timeout=15)
+                market_html = response.read().decode('utf-8')
+                
+                # Extract carrier name and callsign from the market page
+                # HTML structure: <a href="/elite/station/ID/" class="standardcolor">NAME<span class="minor">(CALLSIGN)</span></a>
+                
+                print(f"EDHauler DEBUG: Station ID: {station_id}")
+                
+                # Extract name (between <a> tag and <span> tag)
+                name_match = re.search(r'<a[^>]*href="/elite/station/\d+/"[^>]*class="standardcolor"[^>]*>([^<]+)<span', market_html, re.DOTALL)
+                
+                if name_match:
+                    carrier_info["name"] = name_match.group(1).strip()
+                    print(f"EDHauler DEBUG: Found name: '{carrier_info['name']}'")
+                else:
+                    print(f"EDHauler DEBUG: name_match failed")
+                
+                # Extract callsign (inside <span class="minor"> tag)
+                callsign_match = re.search(r'<span class="minor">\(([^)]+)\)</span>', market_html)
+                
+                if callsign_match:
+                    carrier_info["callsign"] = callsign_match.group(1).strip()
+                    print(f"EDHauler DEBUG: Found callsign: '{carrier_info['callsign']}'")
+                else:
+                    print(f"EDHauler DEBUG: callsign_match failed")
+                
+                # Fallback if neither matched
+                if not carrier_info["name"]:
+                    print(f"EDHauler DEBUG: Using fallback name")
+                    carrier_info["name"] = f"Station {station_id}"
+                
+            else:
+                # Step 1: Search for the carrier to get its station ID
+                search_url = f"{INARA_BASE_URL}/elite/station/?search={quote(self.carrier_name)}"
+                
+                request = Request(
+                    search_url,
+                    headers={'User-Agent': 'EDHauler/1.0 (EDMC Plugin)'}
+                )
+                
+                response = urlopen(request, timeout=15)
+                html_content = response.read().decode('utf-8')
+                
+                # Extract station ID from the market link
+                market_link_match = re.search(r'/elite/station-market/(\d+)/', html_content)
+                if not market_link_match:
+                    self.is_fetching = False
+                    return {"error": "Carrier found but no market link available. Market may be disabled."}
+                
+                station_id = market_link_match.group(1)
+                
+                # Extract carrier info
+                carrier_info = {"name": self.carrier_name, "callsign": ""}
+                # Match either XXX-XXX format OR 3-5 letter/digit format (e.g., CREA)
+                callsign_match = re.search(r'([A-Z0-9]{3}-[A-Z0-9]{3}|[A-Z0-9]{3,5})', html_content)
+                if callsign_match:
+                    carrier_info["callsign"] = callsign_match.group(1)
+                
+                # Step 2: Fetch the actual market page
+                market_url = f"{INARA_BASE_URL}/elite/station-market/{station_id}/"
+                
+                request = Request(
+                    market_url,
+                    headers={'User-Agent': 'EDHauler/1.0 (EDMC Plugin)'}
+                )
+                
+                response = urlopen(request, timeout=15)
+                market_html = response.read().decode('utf-8')
             
             self.is_fetching = False
             
@@ -386,6 +435,11 @@ class EDHauler(object):
         carrier_text = f"{carrier_info.get('name', 'Unknown')} ({carrier_info.get('callsign', 'Unknown')})"
         if self.carrier_label:
             self.carrier_label.config(text=f"Carrier: {carrier_text}")
+        
+        # Update debug label with raw values
+        if self.debug_label:
+            debug_text = f"Name: {carrier_info.get('name', 'N/A')} | Callsign: {carrier_info.get('callsign', 'N/A')}"
+            self.debug_label.config(text=debug_text)
         
         # Display market orders
         orders = self.market_data.get("orders", [])
@@ -595,17 +649,26 @@ def plugin_app(parent):
     )
     hauler.carrier_label.grid(row=0, column=0, columnspan=2, sticky=tk.W, padx=5)
     
+    # Debug label (shows raw name and callsign)
+    hauler.debug_label = tk.Label(
+        frame,
+        text="",
+        justify=tk.LEFT,
+        fg="gray"
+    )
+    hauler.debug_label.grid(row=1, column=0, columnspan=2, sticky=tk.W, padx=5)
+    
     # Status label
     hauler.status_label = tk.Label(
         frame,
         text="Status: Waiting for configuration",
         justify=tk.LEFT
     )
-    hauler.status_label.grid(row=1, column=0, sticky=tk.W, padx=5)
+    hauler.status_label.grid(row=2, column=0, sticky=tk.W, padx=5)
     
     # Button frame for Refresh, Dump, and Overlay toggle
     button_frame = tk.Frame(frame)
-    button_frame.grid(row=1, column=1, sticky=tk.E, padx=5)
+    button_frame.grid(row=2, column=1, sticky=tk.E, padx=5)
     
     # Refresh button
     hauler.refresh_button = tk.Button(
@@ -635,7 +698,7 @@ def plugin_app(parent):
     
     # Market data frame (scrollable area)
     hauler.market_frame = tk.Frame(frame)
-    hauler.market_frame.grid(row=2, column=0, columnspan=2, sticky=tk.W, padx=5)
+    hauler.market_frame.grid(row=3, column=0, columnspan=2, sticky=tk.W, padx=5)
     
     # Start automatic refresh
     hauler.schedule_refresh()
@@ -665,11 +728,11 @@ def plugin_prefs(parent, cmdr, is_beta):
         title_label = tk.Label(frame, text="EDHauler Configuration")
     title_label.grid(row=0, column=0, columnspan=2, sticky=tk.W, padx=10, pady=10)
     
-    # Carrier Name
+    # Carrier Name or Station ID
     if nb:
-        carrier_label = nb.Label(frame, text="Fleet Carrier Name/Callsign:")
+        carrier_label = nb.Label(frame, text="Fleet Carrier Name/ID:")
     else:
-        carrier_label = tk.Label(frame, text="Fleet Carrier Name/Callsign:")
+        carrier_label = tk.Label(frame, text="Fleet Carrier Name/ID:")
     carrier_label.grid(row=1, column=0, sticky=tk.W, padx=10)
     
     this.carrier_name_var = tk.StringVar(value=hauler.carrier_name)
@@ -685,13 +748,13 @@ def plugin_prefs(parent, cmdr, is_beta):
         if nb:
             overlay_check = nb.Checkbutton(
                 frame,
-                text="Enable in-game overlay (green text)",
+                text="Enable in-game overlay (yellow text)",
                 variable=this.overlay_enabled_var
             )
         else:
             overlay_check = tk.Checkbutton(
                 frame,
-                text="Enable in-game overlay (green text)",
+                text="Enable in-game overlay (yellow text)",
                 variable=this.overlay_enabled_var
             )
         overlay_check.grid(row=2, column=0, columnspan=2, sticky=tk.W, padx=10, pady=5)
@@ -700,12 +763,12 @@ def plugin_prefs(parent, cmdr, is_beta):
     if nb:
         help_label = nb.Label(
             frame,
-            text="Enter your Fleet Carrier's name or callsign (e.g., 'Q0G-09K' or 'My Carrier').\nData is fetched from INARA's public pages - no API key needed!\nUpdates automatically every 30 seconds."
+            text="Enter your Fleet Carrier's name, callsign, or INARA station ID.\n• Name/Callsign: 'CREA' or 'Q0G-09K'\n• Station ID: '1063226' (faster, more reliable)\nData is fetched from INARA's public pages - no API key needed!\nUpdates automatically every 30 seconds."
         )
     else:
         help_label = tk.Label(
             frame,
-            text="Enter your Fleet Carrier's name or callsign (e.g., 'Q0G-09K' or 'My Carrier').\nData is fetched from INARA's public pages - no API key needed!\nUpdates automatically every 30 seconds."
+            text="Enter your Fleet Carrier's name, callsign, or INARA station ID.\n• Name/Callsign: 'CREA' or 'Q0G-09K'\n• Station ID: '1063226' (faster, more reliable)\nData is fetched from INARA's public pages - no API key needed!\nUpdates automatically every 30 seconds."
         )
     help_label.grid(row=3, column=0, columnspan=2, sticky=tk.W, padx=10, pady=10)
     
