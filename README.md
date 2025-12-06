@@ -2,6 +2,18 @@
 
 EDHauler is a plugin for Elite Dangerous Market Connector (EDMC) that displays Fleet Carrier market data from INARA's public pages.
 
+Are you hauling and require a constant update of the demand of the carrier you are supplying? Do you find yourself constantly checking on INARA what the current demand is? This is the tool that saves you looking up on INARA constantly. It pushes the demand of the carrier to you onscreen as an EDMC overlay. It refreshes every 30 seconds. You can Refresh manually too. You can Dump/Copy to Clipboard in case you need to update your fellow haulers about the current demand easily.
+
+Happy Hauling!
+
+PS. It helps if you pay forward the benefit by logging and uploading your carrier market data to INARA. Fetch your own API key from HERE (https://inara.cz/elite/cmdr-settings-api/) and input it in EDMC Settings for INARA.
+
+<img width="406" height="164" alt="Image" src="https://github.com/user-attachments/assets/a78a052e-8b1b-424c-b020-5fcc0088948f" />
+
+<img width="533" height="216" alt="Image" src="https://github.com/user-attachments/assets/7c39b5ff-edeb-43f0-9997-b4d99a55aab3" />
+
+<img width="773" height="227" alt="Image" src="https://github.com/user-attachments/assets/08828924-ef0b-443e-80af-6497779aeadd" />
+
 ## Features
 
 - **No API Key Required**: Fetches data from INARA's public pages
