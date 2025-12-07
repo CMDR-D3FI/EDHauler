@@ -28,11 +28,47 @@ PS. It helps if you pay forward the benefit by logging and uploading your carrie
 
 ## Installation
 
-1. Download or clone this repository
-2. Copy the `EDHauler` folder to your EDMC plugins directory:
-   - Windows: `%LOCALAPPDATA%\EDMarketConnector\plugins\`
-   - Mac: `~/Library/Application Support/EDMarketConnector/plugins/`
-   - Linux: `~/.local/share/EDMarketConnector/plugins/`
+### Method 1: Download from Releases (Recommended)
+
+1. **Download the latest release:**
+   - Go to the [Releases page](https://github.com/CMDR-D3FI/EDHauler/releases)
+   - Download the latest `EDHauler-vX.X.X.zip` file
+
+2. **Extract the ZIP file:**
+   - Extract the downloaded ZIP file to a temporary location
+   - You'll find an `EDHauler` folder inside
+
+3. **Move the folder to EDMC plugins directory:**
+   - Move the entire `EDHauler` folder to your EDMC plugins directory:
+     - **Windows**: `%LOCALAPPDATA%\EDMarketConnector\plugins\`
+     - **Mac**: `~/Library/Application Support/EDMarketConnector/plugins/`
+     - **Linux**: `~/.local/share/EDMarketConnector/plugins/`
+
+4. **Verify the installation:**
+   - Ensure your folder structure looks like this:
+     ```
+     EDMarketConnector/
+     └── plugins/
+         └── EDHauler/
+             ├── load.py
+             ├── README.md
+             └── LICENSE
+     ```
+   - The `load.py` file **must** be inside the `EDHauler` folder!
+
+5. **Restart EDMC:**
+   - Close and restart Elite Dangerous Market Connector
+   - The EDHauler plugin should now appear in the main window
+
+### Method 2: Clone from GitHub (For Developers)
+
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/CMDR-D3FI/EDHauler.git
+   ```
+
+2. Copy the entire repository folder to your EDMC plugins directory and rename it to `EDHauler`
+
 3. Restart EDMC
 
 ## Configuration
