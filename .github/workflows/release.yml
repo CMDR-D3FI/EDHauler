@@ -32,13 +32,9 @@ jobs:
           zip -r EDHauler-${{ steps.get_version.outputs.VERSION }}.zip EDHauler/
       
       - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          release_name: EDHauler ${{ github.ref_name }}
+          name: EDHauler ${{ github.ref_name }}
           body: |
             ## EDHauler Plugin Release ${{ github.ref_name }}
             
@@ -60,15 +56,7 @@ jobs:
             - `load.py` - Main plugin file
             - `README.md` - Documentation
             - `LICENSE` - License information
+          files: |
+            EDHauler-${{ steps.get_version.outputs.VERSION }}.zip
           draft: false
           prerelease: false
-      
-      - name: Upload ZIP to Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./EDHauler-${{ steps.get_version.outputs.VERSION }}.zip
-          asset_name: EDHauler-${{ steps.get_version.outputs.VERSION }}.zip
-          asset_content_type: application/zip
