@@ -1,0 +1,74 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on version tags like v1.0.0, v1.2.1, etc.
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write  # Required to create releases
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      
+      - name: Create plugin directory structure
+        run: |
+          mkdir -p EDHauler
+          cp load.py EDHauler/
+          cp README.md EDHauler/
+          cp LICENSE EDHauler/
+      
+      - name: Create ZIP archive
+        run: |
+          zip -r EDHauler-${{ steps.get_version.outputs.VERSION }}.zip EDHauler/
+      
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: EDHauler ${{ github.ref_name }}
+          body: |
+            ## EDHauler Plugin Release ${{ github.ref_name }}
+            
+            ### Installation
+            1. Download `EDHauler-${{ github.ref_name }}.zip`
+            2. Extract the ZIP file
+            3. Copy the `EDHauler` folder to your EDMC plugins directory:
+               - **Windows**: `%LOCALAPPDATA%\EDMarketConnector\plugins\`
+               - **Mac**: `~/Library/Application Support/EDMarketConnector/plugins/`
+               - **Linux**: `~/.local/share/EDMarketConnector/plugins/`
+            4. Restart EDMC
+            
+            ### What's New
+            See the [README](https://github.com/${{ github.repository }}) for full details.
+            
+            ---
+            
+            **Files included in this release:**
+            - `load.py` - Main plugin file
+            - `README.md` - Documentation
+            - `LICENSE` - License information
+          draft: false
+          prerelease: false
+      
+      - name: Upload ZIP to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./EDHauler-${{ steps.get_version.outputs.VERSION }}.zip
+          asset_name: EDHauler-${{ steps.get_version.outputs.VERSION }}.zip
+          asset_content_type: application/zip
